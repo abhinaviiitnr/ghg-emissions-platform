@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHG Emissions Reporting Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a2129; --panel-2: #222b35; --line: #2e3a46;
+    --text: #e6edf3; --muted: #8b9aa8; --teal: #2dd4bf; --teal-dim: #14b8a6;
+    --amber: #f59e0b; --danger: #f87171; --ok: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5; padding: 32px 24px 64px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  header { margin-bottom: 28px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+  header .eyebrow {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--teal); font-weight: 600; margin-bottom: 6px;
+  }
+  header h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.3px; }
+  header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .controls { display: flex; gap: 12px; align-items: center; margin: 22px 0; flex-wrap: wrap; }
+  .controls label { font-size: 13px; color: var(--muted); }
+  select, input {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
+  }
+  select:focus, input:focus { outline: 2px solid var(--teal-dim); outline-offset: -1px; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #3a4856; }
+  .card h3 {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px;
+  }
+  .col-4 { grid-column: span 4; } .col-6 { grid-column: span 6; }
+  .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
+  .kpi .big { font-size: 38px; font-weight: 700; color: var(--teal); letter-spacing: -1px; line-height: 1.1; }
+  .kpi .unit { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .kpi .sub { font-size: 13px; color: var(--muted); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .kpi .sub strong { color: var(--text); font-weight: 600; }
+  canvas { max-height: 280px; } .chart-tall canvas { max-height: 300px; }
+  form { display: flex; flex-direction: column; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button {
+    background: var(--teal-dim); color: #06231f; border: none; padding: 10px 16px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: background 0.15s, opacity 0.15s;
+  }
+  button:hover { background: var(--teal); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: rgba(52,211,153,0.12); color: var(--ok); border: 1px solid rgba(52,211,153,0.3); }
+  .msg.err { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 9px 10px; border-bottom: 1px solid #232c36; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(45,212,191,0.04); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.s1 { background: rgba(45,212,191,0.15); color: var(--teal); }
+  .pill.s2 { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .pill.ovr { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .link-btn { background: none; color: var(--teal); padding: 4px 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; }
+  .link-btn:hover { background: rgba(45,212,191,0.1); border-color: var(--teal-dim); }
+  .skeleton { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; width: 440px; max-width: 92vw; }
+  .modal h3 { font-size: 16px; margin-bottom: 4px; color: var(--text); text-transform: none; letter-spacing: 0; }
+  .modal .meta { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+  .btn-ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--line); }
+  .audit-list { margin-top: 16px; max-height: 200px; overflow-y: auto; }
+  .audit-row { font-size: 12px; padding: 8px; background: var(--panel-2); border-radius: 6px; margin-bottom: 6px; }
+  .audit-row .chg { color: var(--text); } .audit-row .rsn { color: var(--muted); margin-top: 2px; }
+  @media (max-width: 880px) {
+    .col-4, .col-6, .col-8 { grid-column: span 12; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GHG Protocol &middot; Scope 1 &amp; 2</div>
+    <h1>Carbon Emissions Reporting Platform</h1>
+    <p>Central Steel Plant &mdash; emissions inventory, intensity, and source analysis</p>
+  </header>
+
+  <div class="controls">
+    <label for="year">Reporting year</label>
+    <select id="year"><option value="2024" selected>2024</option><option value="2023">2023</option></select>
+    <span id="info" class="note"></span>
+  </div>
+
+  <div class="grid">
+    <div class="card col-4 kpi">
+      <h3>Emission intensity</h3>
+      <div class="big" id="kpi-value">&mdash;</div>
+      <div class="unit">kgCO&#8322;e per tonne steel</div>
+      <div class="sub" id="kpi-sub"></div>
+    </div>
+    <div class="card col-8">
+      <h3>Year-over-year emissions by scope</h3>
+      <canvas id="yoyChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card col-6">
+      <h3>Emission hotspots by source</h3>
+      <canvas id="hotspotChart"></canvas>
+    </div>
+    <div class="card col-6 chart-tall">
+      <h3>Monthly emission trend</h3>
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card col-6">
+      <h3>Record Scope 1 / 2 emission</h3>
+      <form id="recordForm">
+        <div class="field">
+          <label>Activity / source</label>
+          <select name="activity_name" id="activitySelect" required>
+            <option value="">Select an activity&hellip;</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Scope</label>
+            <input name="scope" id="scopeField" readonly placeholder="auto">
+          </div>
+          <div class="field">
+            <label>Section</label>
+            <input name="section" id="sectionField" placeholder="auto">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Quantity</label>
+            <input name="quantity" type="number" step="any" min="0.0001" placeholder="500" required>
+          </div>
+          <div class="field">
+            <label>Unit</label>
+            <input name="unit" id="unitField" readonly placeholder="auto">
+          </div>
+        </div>
+        <div class="field">
+          <label>Activity date</label>
+          <input name="activity_date" type="date" value="2024-06-15" required>
+        </div>
+        <button type="submit" id="recordBtn">Calculate &amp; record emission</button>
+        <div class="msg" id="recordMsg"></div>
+        <div class="note">Scope and unit auto-fill from the selected activity. Emissions are computed server-side using the factor valid on the activity date.</div>
+      </form>
+    </div>
+
+    <div class="card col-6">
+      <h3>Record business metric</h3>
+      <form id="metricForm">
+        <div class="field">
+          <label>Metric name</label>
+          <select name="metric_name" id="metricSelect">
+            <option value="Tonnes of Steel Produced" selected>Tonnes of Steel Produced</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Value (tonnes)</label>
+            <input name="value" type="number" step="any" min="0" placeholder="2000000" required>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input name="metric_date" type="date" value="2024-06-28" required>
+          </div>
+        </div>
+        <button type="submit" id="metricBtn">Add business metric</button>
+        <div class="msg" id="metricMsg"></div>
+        <div class="note">Used as the denominator for emission intensity (kgCO&#8322;e per tonne produced).</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card col-12">
+      <h3>Recent emission records</h3>
+      <div id="recordsArea"><div class="skeleton">Loading records&hellip;</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Override emission record</h3>
+    <div class="meta" id="modalMeta"></div>
+    <div class="field">
+      <label>Corrected emissions (kgCO&#8322;e)</label>
+      <input type="number" id="ovrValue" step="any" min="0">
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Reason for override (required)</label>
+      <input type="text" id="ovrReason" placeholder="e.g. Meter recalibration">
+    </div>
+    <div class="msg" id="ovrMsg"></div>
+    <div class="audit-list" id="auditList"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modalCancel">Cancel</button>
+      <button id="modalSave">Save override</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let charts = {};
+let activities = [];
+let currentOverrideId = null;
+
+const fmt = (n) => {
+  if (n === null || n === undefined) return "\u2014";
+  const a = Math.abs(n);
+  if (a >= 1e9) return (n/1e9).toFixed(2) + "B";
+  if (a >= 1e6) return (n/1e6).toFixed(2) + "M";
+  if (a >= 1e3) return (n/1e3).toFixed(1) + "K";
+  return n.toFixed(0);
+};
+const COLORS = ["#2dd4bf","#f59e0b","#60a5fa","#a78bfa","#f87171","#34d399","#fbbf24","#94a3b8","#475569"];
+
+async function getJSON(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) { let d; try { d = await r.json(); } catch { d = {}; } throw new Error(d.detail || r.statusText); }
+  return r.json();
+}
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = "msg show " + (ok ? "ok" : "err");
+  setTimeout(() => { el.className = "msg"; }, 5000);
+}
+
+function countUp(el, target) {
+  const dur = 800, t0 = performance.now();
+  function tick(t) {
+    const p = Math.min((t - t0) / dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(target * eased);
+    if (p < 1) requestAnimationFrame(tick); else el.textContent = fmt(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+async function loadInfo() {
+  try {
+    const i = await getJSON("/info");
+    document.getElementById("info").textContent =
+      `${i.records} records \u00b7 ${i.factors} factors \u00b7 data ${i.date_range.from} to ${i.date_range.to}`;
+  } catch (e) {}
+}
+
+async function loadActivities() {
+  activities = await getJSON("/activities");
+  const sel = document.getElementById("activitySelect");
+  activities.forEach(a => {
+    const o = document.createElement("option");
+    o.value = a.activity_name;
+    o.textContent = `${a.activity_name} (Scope ${a.scope}, ${a.unit})`;
+    sel.appendChild(o);
+  });
+}
+
+document.getElementById("activitySelect").addEventListener("change", (e) => {
+  const a = activities.find(x => x.activity_name === e.target.value);
+  document.getElementById("scopeField").value = a ? a.scope : "";
+  document.getElementById("unitField").value = a ? a.unit : "";
+  document.getElementById("sectionField").value = a && a.section ? a.section : "";
+});
+
+async function loadKPI(year) {
+  const d = await getJSON(`/analytics/intensity?year=${year}`);
+  const el = document.getElementById("kpi-value");
+  if (d.intensity_kgco2e_per_unit !== null) countUp(el, d.intensity_kgco2e_per_unit);
+  else el.textContent = "\u2014";
+  document.getElementById("kpi-sub").innerHTML =
+    `Total emissions <strong>${fmt(d.total_emissions_kgco2e)}</strong> kgCO\u2082e<br>` +
+    `Production <strong>${fmt(d.total_production)}</strong> tonnes`;
+}
+
+async function loadYoY(year) {
+  const d = await getJSON(`/analytics/yoy?year=${year}`);
+  const yrs = [String(d.previous_year), String(d.current_year)];
+  charts.yoy?.destroy();
+  charts.yoy = new Chart(document.getElementById("yoyChart"), {
+    type: "bar",
+    data: { labels: yrs, datasets: [
+      { label: "Scope 1", data: yrs.map(y => d.data[y].scope_1), backgroundColor: "#2dd4bf", stack: "s" },
+      { label: "Scope 2", data: yrs.map(y => d.data[y].scope_2), backgroundColor: "#f59e0b", stack: "s" } ]},
+    options: { animation: { duration: 700 }, responsive: true, scales: {
+      x: { stacked: true, grid: { color: "#2e3a46" }, ticks: { color: "#8b9aa8" } },
+      y: { stacked: true, grid: { color: "#2e3a46" }, ticks: { color: "#8b9aa8", callback: v => fmt(v) } } },
+      plugins: { legend: { labels: { color: "#e6edf3" } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.raw)} kgCO\u2082e` } } } }
+  });
+}
+
+async function loadHotspot(year) {
+  const d = await getJSON(`/analytics/hotspot?year=${year}`);
+  charts.hotspot?.destroy();
+  charts.hotspot = new Chart(document.getElementById("hotspotChart"), {
+    type: "doughnut",
+    data: { labels: d.breakdown.map(b => b.source),
+      datasets: [{ data: d.breakdown.map(b => b.emissions_kgco2e), backgroundColor: COLORS,
+        borderColor: "#1a2129", borderWidth: 2 }] },
+    options: { animation: { animateRotate: true, duration: 800 }, responsive: true, plugins: {
+      legend: { position: "right", labels: { color: "#e6edf3", font: { size: 11 }, boxWidth: 12 } },
+      tooltip: { callbacks: { label: c => {
+        const pct = (c.raw / d.total_emissions_kgco2e * 100).toFixed(1);
+        return `${c.label}: ${fmt(c.raw)} (${pct}%)`; } } } } }
+  });
+}
+
+async function loadTrend(year) {
+  const d = await getJSON(`/analytics/trend?year=${year}`);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  charts.trend?.destroy();
+  charts.trend = new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: { labels: months, datasets: [{ label: "Emissions", data: d.series.map(s => s.emissions_kgco2e),
+      borderColor: "#2dd4bf", backgroundColor: "rgba(45,212,191,0.1)", fill: true, tension: 0.3, pointRadius: 3 }] },
+    options: { animation: { duration: 800 }, responsive: true, scales: {
+      x: { grid: { color: "#2e3a46" }, ticks: { color: "#8b9aa8" } },
+      y: { grid: { color: "#2e3a46" }, ticks: { color: "#8b9aa8", callback: v => fmt(v) } } },
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => `${fmt(c.raw)} kgCO\u2082e` } } } }
+  });
+}
+
+async function loadRecords() {
+  const area = document.getElementById("recordsArea");
+  try {
+    const recs = await getJSON("/records?limit=15");
+    if (!recs.length) { area.innerHTML = '<div class="skeleton">No records yet.</div>'; return; }
+    let html = '<table><thead><tr><th>ID</th><th>Activity</th><th>Scope</th><th>Section</th>' +
+      '<th class="num">Quantity</th><th class="num">Emissions (kgCO\u2082e)</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+    recs.forEach(r => {
+      const scopePill = `<span class="pill s${r.scope}">Scope ${r.scope}</span>`;
+      const status = r.is_overridden ? '<span class="pill ovr">Overridden</span>' : '<span style="color:var(--muted)">Calculated</span>';
+      const safeName = r.activity_name.replace(/'/g, "\\'");
+      html += `<tr><td>${r.id}</td><td>${r.activity_name}</td><td>${scopePill}</td><td>${r.section || "\u2014"}</td>` +
+        `<td class="num">${r.quantity.toLocaleString()} ${r.unit}</td>` +
+        `<td class="num">${r.calculated_emissions.toLocaleString()}</td><td>${r.activity_date}</td>` +
+        `<td>${status}</td><td><button class="link-btn" onclick="openOverride(${r.id}, '${safeName}', ${r.calculated_emissions})">Override</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+    area.innerHTML = html;
+  } catch (e) { area.innerHTML = `<div class="skeleton" style="color:var(--danger)">Failed to load records: ${e.message}</div>`; }
+}
+
+async function openOverride(id, name, current) {
+  currentOverrideId = id;
+  document.getElementById("modalMeta").textContent = `Record #${id} \u00b7 ${name} \u00b7 current: ${current.toLocaleString()} kgCO\u2082e`;
+  document.getElementById("ovrValue").value = current;
+  document.getElementById("ovrReason").value = "";
+  document.getElementById("ovrMsg").className = "msg";
+  const auditList = document.getElementById("auditList");
+  auditList.innerHTML = "";
+  try {
+    const trail = await getJSON(`/records/${id}/audit`);
+    if (trail.length) {
+      auditList.innerHTML = "<div style='font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px'>Audit history</div>" +
+        trail.map(a => `<div class="audit-row"><div class="chg">${a.old_value} \u2192 ${a.new_value}</div>` +
+          `<div class="rsn">${a.reason || ""} \u00b7 ${new Date(a.changed_at).toLocaleString()}</div></div>`).join("");
+    }
+  } catch (e) {}
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal() { document.getElementById("overlay").classList.remove("show"); }
+document.getElementById("modalCancel").addEventListener("click", closeModal);
+document.getElementById("overlay").addEventListener("click", (e) => { if (e.target.id === "overlay") closeModal(); });
+
+document.getElementById("modalSave").addEventListener("click", async () => {
+  const new_value = parseFloat(document.getElementById("ovrValue").value);
+  const reason = document.getElementById("ovrReason").value.trim();
+  if (isNaN(new_value) || new_value < 0) { showMsg("ovrMsg", "Enter a valid non-negative value.", false); return; }
+  if (!reason) { showMsg("ovrMsg", "A reason is required for the audit trail.", false); return; }
+  const btn = document.getElementById("modalSave"); btn.disabled = true;
+  try {
+    const r = await fetch(`/records/${currentOverrideId}/override`, { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_value, reason }) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Failed");
+    closeModal(); loadRecords(); loadAll();
+  } catch (e) { showMsg("ovrMsg", e.message, false); } finally { btn.disabled = false; }
+});
+
+async function loadAll() {
+  const year = document.getElementById("year").value;
+  try { await Promise.all([loadKPI(year), loadYoY(year), loadHotspot(year), loadTrend(year)]); }
+  catch (e) { console.error(e); }
+}
+
+document.getElementById("year").addEventListener("change", loadAll);
+
+document.getElementById("recordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const body = { activity_name: f.get("activity_name"), scope: parseInt(f.get("scope")),
+    section: f.get("section") || null, quantity: parseFloat(f.get("quantity")),
+    unit: f.get("unit"), activity_date: f.get("activity_date") };
+  const btn = document.getElementById("recordBtn"); btn.disabled = true;
+  try {
+    const r = await fetch("/records", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Failed");
+    showMsg("recordMsg", `Recorded ${fmt(data.calculated_emissions)} kgCO\u2082e for ${data.activity_name}.`, true);
+    loadRecords(); loadAll();
+  } catch (err) { showMsg("recordMsg", err.message, false); } finally { btn.disabled = false; }
+});
+
+document.getElementById("metricForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const body = { metric_name: f.get("metric_name"), value: parseFloat(f.get("value")), metric_date: f.get("metric_date") };
+  const btn = document.getElementById("metricBtn"); btn.disabled = true;
+  try {
+    const r = await fetch("/metrics", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Failed");
+    showMsg("metricMsg", `Added ${data.metric_name} = ${fmt(data.value)} on ${data.metric_date}.`, true);
+    loadAll();
+  } catch (err) { showMsg("metricMsg", err.message, false); } finally { btn.disabled = false; }
+});
+
+loadInfo();
+loadActivities();
+loadRecords();
+loadAll();
+</script>
+</body>
+</html>

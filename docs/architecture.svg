@@ -1,0 +1,68 @@
+<svg width="860" height="600" viewBox="0 0 860 600" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="860" height="600" fill="#0f1419"/>
+  <text x="430" y="36" text-anchor="middle" fill="#2dd4bf" font-size="20" font-weight="600">Carbon Emissions Reporting Platform — Architecture</text>
+  <text x="430" y="58" text-anchor="middle" fill="#8b9aa8" font-size="13">FastAPI · SQLite · SQLAlchemy · Chart.js · Docker</text>
+
+  <!-- Browser layer -->
+  <rect x="230" y="84" width="400" height="64" rx="10" fill="#1a2129" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="430" y="112" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600">Browser — Single-Page Dashboard</text>
+  <text x="430" y="132" text-anchor="middle" fill="#8b9aa8" font-size="12">Chart.js · forms · records table + override modal</text>
+
+  <line x1="430" y1="148" x2="430" y2="180" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="498" y="168" text-anchor="middle" fill="#8b9aa8" font-size="11">HTTP / JSON</text>
+
+  <!-- FastAPI layer -->
+  <rect x="90" y="180" width="680" height="232" rx="12" fill="#161d25" stroke="#2e3a46" stroke-width="1"/>
+  <text x="430" y="204" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600">FastAPI Backend  (port 7860)</text>
+
+  <!-- Analytics engine -->
+  <rect x="112" y="222" width="300" height="100" rx="8" fill="#1f2730" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="262" y="246" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="600">Analytics Engine  (45 pts)</text>
+  <text x="262" y="268" text-anchor="middle" fill="#cbd5e1" font-size="11">/analytics/yoy · /analytics/intensity</text>
+  <text x="262" y="286" text-anchor="middle" fill="#cbd5e1" font-size="11">/analytics/hotspot · /analytics/trend</text>
+  <text x="262" y="306" text-anchor="middle" fill="#8b9aa8" font-size="10">YoY by scope · intensity · source breakdown · monthly</text>
+
+  <!-- Calculation engine -->
+  <rect x="448" y="222" width="300" height="100" rx="8" fill="#1f2730" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="598" y="246" text-anchor="middle" fill="#2dd4bf" font-size="13" font-weight="600">Calculation Engine</text>
+  <text x="598" y="268" text-anchor="middle" fill="#cbd5e1" font-size="11">date-aware factor lookup</text>
+  <text x="598" y="286" text-anchor="middle" fill="#cbd5e1" font-size="11">Activity × Factor → kgCO₂e</text>
+  <text x="598" y="306" text-anchor="middle" fill="#8b9aa8" font-size="10">historical accuracy by activity_date</text>
+
+  <!-- CRUD + override -->
+  <rect x="112" y="334" width="300" height="60" rx="8" fill="#1f2730" stroke="#2e3a46" stroke-width="1"/>
+  <text x="262" y="358" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">Records + Override  (15 pts)</text>
+  <text x="262" y="378" text-anchor="middle" fill="#8b9aa8" font-size="11">POST /records · /override · /audit · /metrics</text>
+
+  <!-- Pydantic -->
+  <rect x="448" y="334" width="300" height="60" rx="8" fill="#1f2730" stroke="#2e3a46" stroke-width="1"/>
+  <text x="598" y="358" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">Pydantic Schemas</text>
+  <text x="598" y="378" text-anchor="middle" fill="#8b9aa8" font-size="11">request validation · response shaping</text>
+
+  <line x1="430" y1="412" x2="430" y2="444" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="500" y="432" text-anchor="middle" fill="#8b9aa8" font-size="11">SQLAlchemy ORM</text>
+
+  <!-- DB layer -->
+  <rect x="170" y="444" width="520" height="130" rx="12" fill="#161d25" stroke="#534AB7" stroke-width="1"/>
+  <text x="430" y="468" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600">SQLite Database  (seeded at build time)</text>
+
+  <rect x="192" y="482" width="150" height="36" rx="6" fill="#1f2730" stroke="#534AB7" stroke-width="1"/>
+  <text x="267" y="505" text-anchor="middle" fill="#cbd5e1" font-size="11">EmissionFactors (versioned)</text>
+
+  <rect x="356" y="482" width="150" height="36" rx="6" fill="#1f2730" stroke="#534AB7" stroke-width="1"/>
+  <text x="431" y="505" text-anchor="middle" fill="#cbd5e1" font-size="11">EmissionRecords</text>
+
+  <rect x="520" y="482" width="150" height="36" rx="6" fill="#1f2730" stroke="#534AB7" stroke-width="1"/>
+  <text x="595" y="505" text-anchor="middle" fill="#cbd5e1" font-size="11">BusinessMetrics</text>
+
+  <rect x="274" y="528" width="150" height="36" rx="6" fill="#1f2730" stroke="#534AB7" stroke-width="1"/>
+  <text x="349" y="551" text-anchor="middle" fill="#cbd5e1" font-size="11">AuditLog</text>
+
+  <rect x="438" y="528" width="150" height="36" rx="6" fill="#1f2730" stroke="#2e3a46" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="513" y="551" text-anchor="middle" fill="#8b9aa8" font-size="11">GHG_Sheet_.xlsx (seed)</text>
+
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1 L8 5 L2 9" fill="none" stroke="#2dd4bf" stroke-width="1.5"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1 L8 5 L2 9" fill="none" stroke="#a78bfa" stroke-width="1.5"/></marker>
+  </defs>
+</svg>
