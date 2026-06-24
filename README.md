@@ -252,3 +252,5 @@ ghg-emissions-platform/
 ├── requirements.txt
 └── README.md
 ```
+- **Live demo:** https://huggingface.co/spaces/abhinaviiitnr/ghg-emissions-platform
+- **Source:** https://github.com/abhinaviiitnr/ghg-emissions-platform
