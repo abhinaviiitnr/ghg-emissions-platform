@@ -211,6 +211,24 @@ the Scope 1 classification in the master data; the engine itself would not chang
 
 ---
 
+## Working prototype — screenshots
+
+**Dashboard (four ESG visualizations):**
+![Dashboard overview](docs/screenshots/01-dashboard-overview.png)
+![Dashboard charts](docs/screenshots/02-dashboard-charts.png)
+
+**Manual override with audit trail:**
+![Override modal with audit history](docs/screenshots/03-override-modal.png)
+
+**Historical accuracy — same activity, different dates resolve to different factors:**
+![Historical accuracy](docs/screenshots/04-historical-accuracy.png)
+
+**Analytics API (live response):**
+![API docs](docs/screenshots/05-api-docs.png)
+
+**Deployed and running on Hugging Face Spaces:**
+![Running Space](docs/screenshots/06-running-space.png)
+
 ## Project structure
 
 ```
